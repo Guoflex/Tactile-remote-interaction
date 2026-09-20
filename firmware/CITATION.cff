@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated paper and this repository."
+title: "Remote Interaction Firmware"
+type: software
+authors:
+  - family-names: "Dong"
+    given-names: "Shuai"
+    affiliation: "SUSTech"
+version: 1.0.0
+date-released: 2026-08-17
+license: Apache-2.0
+keywords:
+  - remote interaction
+  - tactile sensing
+  - ESP32-S3
+  - LVGL
+  - OneNET
+
+# Add repository-code after the public repository is created.
+# Add preferred-citation after the paper title, authors, journal, and DOI are final.

@@ -1,0 +1,19 @@
+#ifndef _DAC80502_H_
+#define _DAC80502_H_
+
+#define SPI_MOSI_HIGH() HAL_GPIO_WritePin(DAC80502_DATA_GPIO_Port, DAC80502_DATA_Pin, GPIO_PIN_SET)
+#define SPI_MOSI_LOW() HAL_GPIO_WritePin(DAC80502_DATA_GPIO_Port, DAC80502_DATA_Pin, GPIO_PIN_RESET)
+
+#define SPI_SCK_HIGH() HAL_GPIO_WritePin(DAC80502_CLK_GPIO_Port, DAC80502_CLK_Pin, GPIO_PIN_SET)
+#define SPI_SCK_LOW() HAL_GPIO_WritePin(DAC80502_CLK_GPIO_Port, DAC80502_CLK_Pin, GPIO_PIN_RESET)
+
+#define SPI_CS_LOW() HAL_GPIO_WritePin(DAC80502_SYNC_GPIO_Port, DAC80502_SYNC_Pin, GPIO_PIN_RESET)
+#define SPI_CS_HIGH() HAL_GPIO_WritePin(DAC80502_SYNC_GPIO_Port, DAC80502_SYNC_Pin, GPIO_PIN_SET)
+
+void set_DAC80502_output_test(void);
+
+void init_dac80502(void);
+
+void set_DAC80502_output(uint16_t mV, uint8_t channel);
+
+#endif
