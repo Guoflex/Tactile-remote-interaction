@@ -1,50 +1,50 @@
 # Remote Interaction Firmware
 
-用于远程触觉交互实验的显示设备固件、采集与刺激控制板固件，以及 OneNET 数据转发工具。
+Display device firmware, sensor and stimulation controller firmware, and OneNET data forwarding tools for remote tactile interaction experiments.
 
-## 系统流程
+## System Workflow
 
 ```text
-采集与刺激控制板（采集端）
-  -> Device A（调零、热图、峰值检测）
-  -> OneNET 物模型属性上报
-  -> HTTP 转发服务
-  -> OneNET 设置 Device B 属性
-  -> Device B 点亮对应通道
-  -> 采集与刺激控制板（刺激端）
+Sensor and stimulation controller (acquisition side)
+  -> Device A (zero calibration, heatmap, peak detection)
+  -> OneNET thing model property reporting
+  -> HTTP forwarding service
+  -> OneNET sets Device B properties
+  -> Device B activates the corresponding channel
+  -> Sensor and stimulation controller (stimulation side)
 ```
 
-## 目录
+## Directory Structure
 
 ```text
-firmware/device_a/         Device A 的 ESP-IDF 工程
-firmware/device_b/         Device B 的 ESP-IDF 工程
-firmware/sensor_stim_board/ STM32H723 采集与刺激控制板工程
+firmware/device_a/         ESP-IDF project for Device A
+firmware/device_b/         ESP-IDF project for Device B
+firmware/sensor_stim_board/ STM32H723 sensor and stimulation controller project
 firmware/docs/onenet_data_forwarding.md
-                           OneNET 配置与测试流程
+                           OneNET configuration and testing procedure
 firmware/tools/onenet_forward_server.py
-                           HTTP 转发服务
+                           HTTP forwarding service
 ```
 
-## 硬件与软件
+## Hardware and Software
 
-| 项目 | 配置 |
+| Item | Configuration |
 | --- | --- |
 | MCU | ESP32-S3 |
-| 采集与刺激控制 MCU | STM32H723VGTx |
-| 显示屏 | 360 x 360 ST77916 |
-| 触摸 | CST816S |
-| 传感输入 | UART2，GPIO43/44，115200 baud |
-| 传感通道 | 47 |
+| Sensor and stimulation controller MCU | STM32H723VGTx |
+| Display | 360 x 360 ST77916 |
+| Touch controller | CST816S |
+| Sensor input | UART2, GPIO43/44, 115200 baud |
+| Sensor channels | 47 |
 | ESP-IDF | 5.5.3 |
 | LVGL | 9.5.0 |
 | esp_lvgl_port | 2.7.2 |
 
-两个固件的精确组件版本分别记录在各自的 `dependencies.lock` 中；两端使用相同硬件基础配置，因此共享同一份 `sdkconfig.defaults` 内容。
+Exact component versions are recorded in each device's `dependencies.lock`. Both devices use the same base hardware configuration and therefore have identical `sdkconfig.defaults` contents.
 
-## 配置
+## Configuration
 
-公开代码使用以下占位符，不包含真实凭据：
+The public source code uses the following placeholders instead of real credentials:
 
 ```text
 <WIFI_SSID>
@@ -55,18 +55,18 @@ firmware/tools/onenet_forward_server.py
 <ONENET_DEVICE_B_NAME>
 ```
 
-构建前，在以下文件中填入本地测试值：
+Before building, enter your local test values in these files:
 
 - `firmware/device_a/main/main.c`
 - `firmware/device_a/components/BSP/IOT/onenet_mqtt.h`
 - `firmware/device_b/main/main.c`
 - `firmware/device_b/components/BSP/IOT/onenet_mqtt.h`
 
-不要把真实 Wi-Fi 密码、AccessKey、authorization 或生成的 `sdkconfig` 提交到仓库。
+Do not commit real Wi-Fi passwords, AccessKey values, authorization credentials, or generated `sdkconfig` files to the repository.
 
-## 构建
+## Building
 
-在 ESP-IDF 5.5.3 终端中执行：
+Run the following commands from the repository root in an ESP-IDF 5.5.3 terminal, replacing the placeholders with the appropriate device directory and serial port:
 
 ```powershell
 cd firmware/<device_a_or_device_b>
@@ -76,28 +76,28 @@ idf.py build
 idf.py -p <SERIAL_PORT> flash monitor
 ```
 
-`build/`、`managed_components/` 和 `sdkconfig` 都是本地生成内容，不需要提交。
+`build/`, `managed_components/`, and `sdkconfig` are generated locally and do not need to be committed.
 
-采集与刺激控制板使用 STM32CubeH7 1.12.1 和 Keil MDK-ARM 工程，构建方法及安全说明见 [板端文档](firmware/sensor_stim_board/README.md)。
+The sensor and stimulation controller uses STM32CubeH7 1.12.1 and a Keil MDK-ARM project. See the [board documentation](firmware/sensor_stim_board/README.md) for build instructions and safety information.
 
-## Device A 行为
+## Device A Behavior
 
-- UART 帧由 `AA 55`、47 个小端 `uint16_t`、1 个 checksum 字节和 `CR LF` 构成，总长 99 字节。
-- 当前固件按帧头解析数据，但尚未验证 checksum 和结尾字节。
-- ZERO 按钮把当前 47 通道原始值记录为零点。
-- 热图显示范围为 0-80，通道与手部位置映射见 `firmware/device_a/components/BSP/LVGL/ui_matrix.c`。
-- 峰值达到 20 时立即上报；活动期间每 100 ms 上报一次；低于或等于 15 连续 3 帧后上报一次清零。
+- Each UART frame consists of `AA 55`, 47 little-endian `uint16_t` values, one checksum byte, and `CR LF`, for a total of 99 bytes.
+- The current firmware parses data using the frame header but does not yet validate the checksum or trailing bytes.
+- The ZERO button records the current raw values of all 47 channels as the zero baseline.
+- The heatmap display range is 0-80. See `firmware/device_a/components/BSP/LVGL/ui_matrix.c` for the mapping between channels and hand locations.
+- A report is sent immediately when the peak reaches 20, then every 100 ms while active. A single reset report is sent after the value remains at or below 15 for three consecutive frames.
 
-## Device B 行为
+## Device B Behavior
 
-- 订阅自身的 OneNET 物模型属性设置主题，并只接受 `source_id` 与 Device A 名称一致的数据。
-- 收到 `matrix_data` 时刷新全部 47 个点；兼容仅包含 `max_tx_idx` 和 `max_tx_value` 的单点数据。
-- 连续 1 秒未收到有效信号时自动清空热图，避免保留过期状态。
+- Subscribes to its OneNET thing model property-setting topic and accepts only data whose `source_id` matches the Device A name.
+- Updates all 47 points when `matrix_data` is received. Single-point data containing only `max_tx_idx` and `max_tx_value` is also supported.
+- Automatically clears the heatmap after one second without a valid signal to avoid retaining a stale state.
 
 ## OneNET
 
-Device A 上报 `source_id`、`frame_id`、`max_tx_idx`、`max_tx_value` 和 47 点 `matrix_data`。平台规则、HTTP 推送、转发服务和 Device B 下发流程见 [OneNET 数据流转文档](firmware/docs/onenet_data_forwarding.md)。
+Device A reports `source_id`, `frame_id`, `max_tx_idx`, `max_tx_value`, and the 47-point `matrix_data` array. See the [OneNET data forwarding documentation](firmware/docs/onenet_data_forwarding.md) for platform rules, HTTP push configuration, the forwarding service, and property delivery to Device B.
 
-## 引用与许可
+## Citation and License
 
-引用信息见 [CITATION.cff](firmware/CITATION.cff)。代码按 Apache License 2.0 发布，详见 [LICENSE](firmware/LICENSE)。第三方组件仍适用各自许可证。
+See [CITATION.cff](firmware/CITATION.cff) for citation information. The code is released under the Apache License 2.0; see [LICENSE](firmware/LICENSE). Third-party components remain subject to their respective licenses.
