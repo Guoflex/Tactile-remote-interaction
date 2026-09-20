@@ -17,12 +17,12 @@
 ## 目录
 
 ```text
-device_a/                  Device A 的 ESP-IDF 工程
-device_b/                  Device B 的 ESP-IDF 工程
-sensor_stim_board/         STM32H723 采集与刺激控制板工程
-docs/onenet_data_forwarding.md
+firmware/device_a/         Device A 的 ESP-IDF 工程
+firmware/device_b/         Device B 的 ESP-IDF 工程
+firmware/sensor_stim_board/ STM32H723 采集与刺激控制板工程
+firmware/docs/onenet_data_forwarding.md
                            OneNET 配置与测试流程
-tools/onenet_forward_server.py
+firmware/tools/onenet_forward_server.py
                            HTTP 转发服务
 ```
 
@@ -57,10 +57,10 @@ tools/onenet_forward_server.py
 
 构建前，在以下文件中填入本地测试值：
 
-- `device_a/main/main.c`
-- `device_a/components/BSP/IOT/onenet_mqtt.h`
-- `device_b/main/main.c`
-- `device_b/components/BSP/IOT/onenet_mqtt.h`
+- `firmware/device_a/main/main.c`
+- `firmware/device_a/components/BSP/IOT/onenet_mqtt.h`
+- `firmware/device_b/main/main.c`
+- `firmware/device_b/components/BSP/IOT/onenet_mqtt.h`
 
 不要把真实 Wi-Fi 密码、AccessKey、authorization 或生成的 `sdkconfig` 提交到仓库。
 
@@ -69,7 +69,7 @@ tools/onenet_forward_server.py
 在 ESP-IDF 5.5.3 终端中执行：
 
 ```powershell
-cd <device_a_or_device_b>
+cd firmware/<device_a_or_device_b>
 $env:PYTHONUTF8="1"
 idf.py set-target esp32s3
 idf.py build
@@ -78,14 +78,14 @@ idf.py -p <SERIAL_PORT> flash monitor
 
 `build/`、`managed_components/` 和 `sdkconfig` 都是本地生成内容，不需要提交。
 
-采集与刺激控制板使用 STM32CubeH7 1.12.1 和 Keil MDK-ARM 工程，构建方法及安全说明见 [板端文档](sensor_stim_board/README.md)。
+采集与刺激控制板使用 STM32CubeH7 1.12.1 和 Keil MDK-ARM 工程，构建方法及安全说明见 [板端文档](firmware/sensor_stim_board/README.md)。
 
 ## Device A 行为
 
 - UART 帧由 `AA 55`、47 个小端 `uint16_t`、1 个 checksum 字节和 `CR LF` 构成，总长 99 字节。
 - 当前固件按帧头解析数据，但尚未验证 checksum 和结尾字节。
 - ZERO 按钮把当前 47 通道原始值记录为零点。
-- 热图显示范围为 0-80，通道与手部位置映射见 `device_a/components/BSP/LVGL/ui_matrix.c`。
+- 热图显示范围为 0-80，通道与手部位置映射见 `firmware/device_a/components/BSP/LVGL/ui_matrix.c`。
 - 峰值达到 20 时立即上报；活动期间每 100 ms 上报一次；低于或等于 15 连续 3 帧后上报一次清零。
 
 ## Device B 行为
@@ -96,8 +96,8 @@ idf.py -p <SERIAL_PORT> flash monitor
 
 ## OneNET
 
-Device A 上报 `source_id`、`frame_id`、`max_tx_idx`、`max_tx_value` 和 47 点 `matrix_data`。平台规则、HTTP 推送、转发服务和 Device B 下发流程见 [OneNET 数据流转文档](docs/onenet_data_forwarding.md)。
+Device A 上报 `source_id`、`frame_id`、`max_tx_idx`、`max_tx_value` 和 47 点 `matrix_data`。平台规则、HTTP 推送、转发服务和 Device B 下发流程见 [OneNET 数据流转文档](firmware/docs/onenet_data_forwarding.md)。
 
 ## 引用与许可
 
-引用信息见 `CITATION.cff`。代码按 Apache License 2.0 发布，详见 `LICENSE`。第三方组件仍适用各自许可证。
+引用信息见 [CITATION.cff](firmware/CITATION.cff)。代码按 Apache License 2.0 发布，详见 [LICENSE](firmware/LICENSE)。第三方组件仍适用各自许可证。
